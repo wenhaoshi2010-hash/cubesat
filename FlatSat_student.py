@@ -74,7 +74,7 @@ def take_photo():
     while True:
         accelx, accely, accelz = accel_gyro.acceleration
 
-  # compute acceleration magnitude
+        # compute acceleration magnitude
         total_accel = math.sqrt(accelx**2 + accely**2 + accelz**2)
 
         # check if above threshold
@@ -89,16 +89,12 @@ def take_photo():
             filename = img_gen(name)
 
             # take a picture
-            picam2.configure(picam2.create_still_configuration())
-            picam2.start()
             picam2.capture_file(filename)
-            picam2.stop()
-
             print(f"Saved photo: {filename}")
 
-            # optionally push to GitHub
+            # optionally push to GitHub, uncomment #git_push() if everything works
             if REPO_PATH and FOLDER_PATH:
-                git_push()
+                #git_push()
 
             # give a short delay before next detection
             time.sleep(1)
@@ -111,4 +107,5 @@ def main():
 if __name__ == '__main__':
 
     main()
+
 
