@@ -15,6 +15,7 @@ You will need to complete the take_photo() function and configure the VARIABLES 
 
 #import libraries
 import time
+import math
 import board
 from adafruit_lsm6ds.lsm6dsox import LSM6DSOX as LSM6DS
 from adafruit_lis3mdl import LIS3MDL
@@ -22,7 +23,7 @@ from git import Repo
 from picamera2 import Picamera2
 
 #VARIABLES
-THRESHOLD = 15      #Any desired value from the accelerometer
+THRESHOLD = 20      #Any desired value from the accelerometer
 REPO_PATH = "/home/pi/FlatSatChallenge"     #Your github repo path: ex. /home/pi/FlatSatChallenge
 FOLDER_PATH = "/Images"   #Your image folder path in your GitHub repo: ex. /Images
 
@@ -59,14 +60,16 @@ def img_gen(name):
     Parameters:
         name (str): your name ex. MasonM
     """
-    t = time.Mileftime("_%H%M%S")
+    t = time.strftime("_%H%M%S")
     imgname = (f'{REPO_PATH}/{FOLDER_PATH}/{name}{t}.jpg')
     return imgname
-
+    
 
 def take_photo():
-  """ Detects shake and takes a photo when threshold exceeded. """
-  print("Monitoring IMU...")
+    print("Monitoring IMU...")
+
+    picam2.configure(picam2.create_still_configuration())
+    picam2.start()
     
     while True:
         accelx, accely, accelz = accel_gyro.acceleration
@@ -108,3 +111,4 @@ def main():
 if __name__ == '__main__':
 
     main()
+
