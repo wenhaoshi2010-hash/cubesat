@@ -22,9 +22,9 @@ from git import Repo
 from picamera2 import Picamera2
 
 #VARIABLES
-THRESHOLD = 0      #Any desired value from the accelerometer
-REPO_PATH = ""     #Your github repo path: ex. /home/pi/FlatSatChallenge
-FOLDER_PATH = ""   #Your image folder path in your GitHub repo: ex. /Images
+THRESHOLD = 15      #Any desired value from the accelerometer
+REPO_PATH = "/home/pi/FlatSatChallenge"     #Your github repo path: ex. /home/pi/FlatSatChallenge
+FOLDER_PATH = "/Images"   #Your image folder path in your GitHub repo: ex. /Images
 
 #imu and camera initialization
 i2c = board.I2C()
@@ -59,31 +59,52 @@ def img_gen(name):
     Parameters:
         name (str): your name ex. MasonM
     """
-    t = time.strftime("_%H%M%S")
+    t = time.Mileftime("_%H%M%S")
     imgname = (f'{REPO_PATH}/{FOLDER_PATH}/{name}{t}.jpg')
     return imgname
 
 
 def take_photo():
-    """
-    This function is NOT complete. Takes a photo when the FlatSat is shaken.
-    Replace psuedocode with your own code.
-    """
+  """ Detects shake and takes a photo when threshold exceeded. """
+  print("Monitoring IMU...")
+    
     while True:
         accelx, accely, accelz = accel_gyro.acceleration
 
-        #CHECKS IF READINGS ARE ABOVE THRESHOLD
-            #PAUSE
-            #name = ""     #First Name, Last Initial  ex. MasonM
-            #TAKE PHOTO
-            #PUSH PHOTO TO GITHUB
-        
-        #PAUSE
+  # compute acceleration magnitude
+        total_accel = math.sqrt(accelx**2 + accely**2 + accelz**2)
 
+        # check if above threshold
+        if total_accel > THRESHOLD:
+            print(f"Shake detected! Accel: {total_accel:.2f}")
+
+            # pause so we don't take lots of photos in a row
+            time.sleep(0.5)
+
+            # generate filename
+            name = "Mile"  
+            filename = img_gen(name)
+
+            # take a picture
+            picam2.configure(picam2.create_still_configuration())
+            picam2.start()
+            picam2.capture_file(filename)
+            picam2.stop()
+
+            print(f"Saved photo: {filename}")
+
+            # optionally push to GitHub
+            if REPO_PATH and FOLDER_PATH:
+                git_push()
+
+            # give a short delay before next detection
+            time.sleep(1)
+            
 
 def main():
     take_photo()
 
 
 if __name__ == '__main__':
+
     main()
