@@ -92,9 +92,9 @@ def take_photo():
             picam2.capture_file(filename)
             print(f"Saved photo: {filename}")
 
-            # optionally push to GitHub, uncomment #git_push() if everything works
+            # optionally push to GitHub
             if REPO_PATH and FOLDER_PATH:
-                #git_push()
+                pass #git_push() intentionally disabled
 
             # give a short delay before next detection
             time.sleep(1)
@@ -107,5 +107,6 @@ def main():
 if __name__ == '__main__':
 
     main()
+
 
 
