@@ -24,8 +24,8 @@ from picamera2 import Picamera2
 
 #VARIABLES
 THRESHOLD = 20      #Any desired value from the accelerometer
-REPO_PATH = "/home/pi/FlatSatChallenge"     #Your github repo path: ex. /home/pi/FlatSatChallenge
-FOLDER_PATH = "/Images"   #Your image folder path in your GitHub repo: ex. /Images
+REPO_PATH = "/home/pi/cubesat"     #Your github repo path: ex. /home/pi/FlatSatChallenge
+FOLDER_PATH = "Images"   #Your image folder path in your GitHub repo: ex. /Images
 
 #imu and camera initialization
 i2c = board.I2C()
@@ -61,7 +61,8 @@ def img_gen(name):
         name (str): your name ex. MasonM
     """
     t = time.strftime("_%H%M%S")
-    imgname = (f'{REPO_PATH}/{FOLDER_PATH}/{name}{t}.jpg')
+    #imgname = (f'{REPO_PATH}/{FOLDER_PATH}/{name}{t}.jpg')
+    imgname= (f'{name}.jpg')
     return imgname
     
 
@@ -107,6 +108,7 @@ def main():
 if __name__ == '__main__':
 
     main()
+
 
 
 
