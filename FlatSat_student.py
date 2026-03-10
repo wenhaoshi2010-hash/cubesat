@@ -13,21 +13,23 @@ You will need to complete the take_photo() function and configure the VARIABLES 
 #AUTHOR: 
 #DATE:
 
-#import libraries
+# import libraries
 import time
 import math
 import board
+import cv2
+import numpy as np
 from adafruit_lsm6ds.lsm6dsox import LSM6DSOX as LSM6DS
 from adafruit_lis3mdl import LIS3MDL
 from git import Repo
 from picamera2 import Picamera2
 
-#VARIABLES
-THRESHOLD = 20      #Any desired value from the accelerometer
-REPO_PATH = "/home/pi/cubesat"     #Your github repo path: ex. /home/pi/FlatSatChallenge
-FOLDER_PATH = "Images"   #Your image folder path in your GitHub repo: ex. /Images
+# VARIABLES
+THRESHOLD = 20
+REPO_PATH = "/home/pi/cubesat"
+FOLDER_PATH = "Images"
 
-#imu and camera initialization
+# imu and camera initialization
 i2c = board.I2C()
 accel_gyro = LSM6DS(i2c)
 mag = LIS3MDL(i2c)
@@ -35,79 +37,96 @@ picam2 = Picamera2()
 
 
 def git_push():
-    """
-    This function is complete. Stages, commits, and pushes new images to your GitHub repo.
-    """
     try:
         repo = Repo(REPO_PATH)
         origin = repo.remote('origin')
-        print('added remote')
         origin.pull()
-        print('pulled changes')
         repo.git.add(REPO_PATH + FOLDER_PATH)
         repo.index.commit('New Photo')
-        print('made the commit')
         origin.push()
-        print('pushed changes')
     except:
-        print('Couldn\'t upload to git')
+        print("Couldn't upload to git")
 
 
 def img_gen(name):
-    """
-    This function is complete. Generates a new image name.
-
-    Parameters:
-        name (str): your name ex. MasonM
-    """
     t = time.strftime("_%H%M%S")
-    #imgname = (f'{REPO_PATH}/{FOLDER_PATH}/{name}{t}.jpg')
-    imgname= (f'{name}.jpg')
+    imgname = (f'{name}{t}.jpg')
     return imgname
-    
+
+
+def generate_depth_and_flatness(image_list):
+
+    print("Generating depth map using all images...")
+
+    disparity_maps = []
+    stereo = cv2.StereoBM_create(numDisparities=64, blockSize=15)
+
+    # loop through image pairs
+    for i in range(len(image_list) - 1):
+
+        img1 = cv2.imread(image_list[i], 0)
+        img2 = cv2.imread(image_list[i + 1], 0)
+
+        disparity = stereo.compute(img1, img2)
+
+        disparity_maps.append(disparity.astype(np.float32))
+
+    # average all disparity maps
+    avg_disparity = np.mean(disparity_maps, axis=0)
+
+    cv2.imwrite("depth_map.png", avg_disparity)
+
+    print("Generating flatness map...")
+
+    gradient = np.gradient(avg_disparity)
+    flatness = np.sqrt(gradient[0]**2 + gradient[1]**2)
+
+    cv2.imwrite("flatness_map.png", flatness)
 
 def take_photo():
+
     print("Monitoring IMU...")
 
     picam2.configure(picam2.create_still_configuration())
     picam2.start()
-    
+
     while True:
+
         accelx, accely, accelz = accel_gyro.acceleration
 
-        # compute acceleration magnitude
         total_accel = math.sqrt(accelx**2 + accely**2 + accelz**2)
 
-        # check if above threshold
         if total_accel > THRESHOLD:
+
             print(f"Shake detected! Accel: {total_accel:.2f}")
 
-            # pause so we don't take lots of photos in a row
-            time.sleep(0.5)
-
-            # generate filename
-            name = "Mile"  
-            filename = img_gen(name)
-
-            # take a picture
-            picam2.capture_file(filename)
-            print(f"Saved photo: {filename}")
-
-            # optionally push to GitHub
-            if REPO_PATH and FOLDER_PATH:
-                pass #git_push() intentionally disabled
-
-            # give a short delay before next detection
+            # 1 second delay before photos
             time.sleep(1)
-            
 
-def main():
-    take_photo()
+            images = []
 
+            # capture 5 images
+            for i in range(5):
+
+                name = f"terrain_{i}"
+                filename = img_gen(name)
+
+                picam2.capture_file(filename)
+                print(f"Saved photo: {filename}")
+
+                images.append(filename)
+
+                time.sleep(1)
+
+            # generate terrain maps using first two images
+            generate_depth_and_flatness(images)
+
+            time.sleep(2)
 
 if __name__ == '__main__':
 
     main()
+
 
 
 
